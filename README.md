@@ -2,7 +2,7 @@
 
 A multi-agent WAT (Workflows, Agents, Tools) pipeline that enriches raw CVE IDs with threat intelligence from 6 free public sources and produces prioritized, executive-ready patch guidance — so your team fixes the right vulnerabilities first.
 
-![VulnPriority](vulnerability_prioritization_image.png)
+![VulnPriority](pipeline_infographic.png)
 
 ---
 
