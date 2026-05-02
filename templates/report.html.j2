@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }}</title>
+<style>
+  :root {
+    --critical: #c0392b; --critical-bg: #fdecea;
+    --high: #e67e22; --high-bg: #fef3e2;
+    --medium: #f1c40f; --medium-bg: #fefce8;
+    --low: #27ae60; --low-bg: #eafaf1;
+    --unscored: #7f8c8d; --unscored-bg: #f8f9fa;
+    --dark: #1a1a2e; --mid: #2c3e50; --accent: #3498db;
+    --border: #dde3ea;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f7fa; color: #2c3e50; font-size: 14px; line-height: 1.5; }
+  .page-wrap { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+  /* Header */
+  .report-header { background: var(--dark); color: white; padding: 32px; border-radius: 12px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .report-header h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+  .report-header .meta { font-size: 12px; opacity: 0.7; }
+  .stat-pills { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+  .pill { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .pill-total { background: rgba(255,255,255,0.15); }
+  .pill-critical { background: var(--critical); }
+  .pill-high { background: var(--high); }
+  .pill-medium { background: #b7950b; }
+  .pill-low { background: var(--low); }
+
+  /* Section headers */
+  h2 { font-size: 18px; font-weight: 700; color: var(--dark); margin: 28px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+  h3 { font-size: 15px; font-weight: 600; color: var(--mid); margin-bottom: 8px; }
+
+  /* Cards */
+  .card { background: white; border-radius: 10px; border: 1px solid var(--border); padding: 20px; margin-bottom: 16px; }
+  .card-shadow { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+
+  /* Executive summary */
+  .exec-grid { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+  .chart-wrap { display: flex; align-items: center; justify-content: center; }
+  .key-findings ul { padding-left: 18px; }
+  .key-findings li { margin-bottom: 8px; }
+
+  /* Full vulnerability table */
+  .vuln-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .vuln-table th { background: var(--dark); color: white; padding: 10px 12px; text-align: left; font-weight: 600; font-size: 12px; cursor: pointer; user-select: none; white-space: nowrap; }
+  .vuln-table th:hover { background: var(--mid); }
+  .vuln-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .vuln-table tr:hover td { background: rgba(52, 152, 219, 0.05); }
+  .row-critical td { background: var(--critical-bg); }
+  .row-high td { background: var(--high-bg); }
+  .row-medium td { background: var(--medium-bg); }
+  .row-low td { background: var(--low-bg); }
+  .row-unscored td { background: var(--unscored-bg); }
+
+  /* Priority badges */
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-Critical { background: var(--critical); color: white; }
+  .badge-High { background: var(--high); color: white; }
+  .badge-Medium { background: var(--medium); color: #333; }
+  .badge-Low { background: var(--low); color: white; }
+  .badge-Unscored { background: var(--unscored); color: white; }
+  .badge-kev { background: #c0392b; color: white; font-size: 10px; }
+  .badge-ransomware { background: #8e44ad; color: white; font-size: 10px; }
+  .badge-exploit { background: #e74c3c; color: white; font-size: 10px; }
+  .badge-poc { background: #e67e22; color: white; font-size: 10px; }
+
+  /* Score display */
+  .score-circle { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; font-size: 15px; font-weight: 700; color: white; }
+  .score-Critical { background: var(--critical); }
+  .score-High { background: var(--high); }
+  .score-Medium { background: #b7950b; }
+  .score-Low { background: var(--low); }
+  .score-Unscored { background: var(--unscored); }
+
+  /* CVE detail cards */
+  .cve-card { border-left: 4px solid var(--border); margin-bottom: 20px; }
+  .cve-card-Critical { border-left-color: var(--critical); }
+  .cve-card-High { border-left-color: var(--high); }
+  .cve-card-Medium { border-left-color: var(--medium); }
+  .cve-card-Low { border-left-color: var(--low); }
+  .cve-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+  .cve-id-link { font-size: 17px; font-weight: 700; color: var(--accent); text-decoration: none; }
+  .cve-id-link:hover { text-decoration: underline; }
+  .cve-meta-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .ciso-summary { background: #f0f4ff; border-radius: 6px; padding: 12px 14px; margin: 10px 0; font-size: 13px; line-height: 1.6; border-left: 3px solid var(--accent); }
+  .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+  .detail-item { background: #f8f9fa; border-radius: 6px; padding: 10px 12px; }
+  .detail-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #7f8c8d; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .detail-value { font-size: 13px; font-weight: 600; color: var(--dark); word-break: break-word; }
+  .score-breakdown { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+  .score-breakdown th { background: #ecf0f1; padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 600; color: #555; }
+  .score-breakdown td { padding: 5px 10px; border-bottom: 1px solid var(--border); }
+  .score-breakdown .total-row td { font-weight: 700; background: #ecf0f1; }
+  .actions-list { padding-left: 0; list-style: none; }
+  .actions-list li { padding: 5px 0; padding-left: 16px; position: relative; font-size: 13px; }
+  .actions-list li::before { content: "▸"; position: absolute; left: 0; color: var(--accent); }
+  .refs-list { display: flex; flex-direction: column; gap: 3px; }
+  .refs-list a { font-size: 12px; color: var(--accent); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block; }
+  .technique-tag { display: inline-block; background: #2c3e50; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; margin: 2px 2px 2px 0; font-family: monospace; }
+  .cwe-tag { display: inline-block; background: #8e44ad; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; margin: 2px 2px 2px 0; }
+  .section-toggle { cursor: pointer; }
+  .collapsible { display: none; }
+  .collapsible.open { display: block; }
+
+  /* Methodology section */
+  .method-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .method-table th, .method-table td { padding: 8px 12px; border: 1px solid var(--border); text-align: left; }
+  .method-table th { background: #ecf0f1; font-weight: 600; }
+  .formula-box { background: #1a1a2e; color: #a8d8ea; font-family: monospace; padding: 16px 20px; border-radius: 8px; font-size: 13px; line-height: 1.8; margin: 12px 0; white-space: pre; overflow-x: auto; }
+
+  /* Audit trail */
+  .audit-entry { font-family: monospace; font-size: 11px; background: #1a1a2e; color: #a8d8ea; padding: 8px 12px; border-radius: 4px; margin-bottom: 4px; white-space: pre-wrap; word-break: break-all; }
+
+  @media (max-width: 768px) {
+    .exec-grid { grid-template-columns: 1fr; }
+    .detail-grid { grid-template-columns: 1fr 1fr; }
+    .vuln-table { font-size: 12px; }
+  }
+  @media print {
+    .collapsible { display: block !important; }
+    body { background: white; }
+    .card { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+<!-- ============================================================ HEADER -->
+<div class="report-header">
+  <div>
+    {% if logo_b64 %}<img src="data:image/png;base64,{{ logo_b64 }}" height="40" style="margin-bottom:12px"><br>{% endif %}
+    <h1>{{ title }}</h1>
+    <div class="meta">Generated: {{ generated_at }} UTC &nbsp;|&nbsp; Data freshness: {{ freshness_note }}</div>
+    <div class="stat-pills">
+      <span class="pill pill-total">Total: {{ stats.total }}</span>
+      {% if stats.critical > 0 %}<span class="pill pill-critical">Critical: {{ stats.critical }}</span>{% endif %}
+      {% if stats.high > 0 %}<span class="pill pill-high">High: {{ stats.high }}</span>{% endif %}
+      {% if stats.medium > 0 %}<span class="pill pill-medium">Medium: {{ stats.medium }}</span>{% endif %}
+      {% if stats.low > 0 %}<span class="pill pill-low">Low: {{ stats.low }}</span>{% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ EXECUTIVE SUMMARY -->
+<h2>Executive Summary</h2>
+<div class="card card-shadow">
+  <div class="exec-grid">
+    <div class="chart-wrap">
+      <!-- Inline SVG donut chart -->
+      <svg width="220" height="220" viewBox="0 0 220 220">
+        {% set cx = 110 %} {% set cy = 110 %} {% set r = 80 %} {% set stroke = 36 %}
+        {% set circumference = 502.65 %}
+        {% set offset_c = 0 %}
+        {% set seg_c = (stats.critical / stats.total * circumference) if stats.total > 0 else 0 %}
+        {% set offset_h = offset_c + seg_c %}
+        {% set seg_h = (stats.high / stats.total * circumference) if stats.total > 0 else 0 %}
+        {% set offset_m = offset_h + seg_h %}
+        {% set seg_m = (stats.medium / stats.total * circumference) if stats.total > 0 else 0 %}
+        {% set offset_l = offset_m + seg_m %}
+        {% set seg_l = (stats.low / stats.total * circumference) if stats.total > 0 else 0 %}
+        <circle cx="{{ cx }}" cy="{{ cy }}" r="{{ r }}" fill="none" stroke="#ecf0f1" stroke-width="{{ stroke }}"/>
+        {% if seg_c > 0 %}<circle cx="{{ cx }}" cy="{{ cy }}" r="{{ r }}" fill="none" stroke="#c0392b" stroke-width="{{ stroke }}" stroke-dasharray="{{ seg_c }} {{ circumference }}" stroke-dashoffset="{{ -offset_c }}" transform="rotate(-90 {{ cx }} {{ cy }})"/>{% endif %}
+        {% if seg_h > 0 %}<circle cx="{{ cx }}" cy="{{ cy }}" r="{{ r }}" fill="none" stroke="#e67e22" stroke-width="{{ stroke }}" stroke-dasharray="{{ seg_h }} {{ circumference }}" stroke-dashoffset="{{ -offset_h }}" transform="rotate(-90 {{ cx }} {{ cy }})"/>{% endif %}
+        {% if seg_m > 0 %}<circle cx="{{ cx }}" cy="{{ cy }}" r="{{ r }}" fill="none" stroke="#f1c40f" stroke-width="{{ stroke }}" stroke-dasharray="{{ seg_m }} {{ circumference }}" stroke-dashoffset="{{ -offset_m }}" transform="rotate(-90 {{ cx }} {{ cy }})"/>{% endif %}
+        {% if seg_l > 0 %}<circle cx="{{ cx }}" cy="{{ cy }}" r="{{ r }}" fill="none" stroke="#27ae60" stroke-width="{{ stroke }}" stroke-dasharray="{{ seg_l }} {{ circumference }}" stroke-dashoffset="{{ -offset_l }}" transform="rotate(-90 {{ cx }} {{ cy }})"/>{% endif %}
+        <text x="{{ cx }}" y="{{ cy - 8 }}" text-anchor="middle" font-size="28" font-weight="700" fill="#1a1a2e">{{ stats.total }}</text>
+        <text x="{{ cx }}" y="{{ cy + 14 }}" text-anchor="middle" font-size="12" fill="#7f8c8d">CVEs</text>
+        <!-- Legend -->
+        {% for label, color, count in [('Critical', '#c0392b', stats.critical), ('High', '#e67e22', stats.high), ('Medium', '#f1c40f', stats.medium), ('Low', '#27ae60', stats.low)] %}
+        {% if count > 0 %}
+        <rect x="20" y="{{ 140 + loop.index0 * 18 }}" width="12" height="12" fill="{{ color }}" rx="2"/>
+        <text x="38" y="{{ 151 + loop.index0 * 18 }}" font-size="11" fill="#2c3e50">{{ label }}: {{ count }}</text>
+        {% endif %}
+        {% endfor %}
+      </svg>
+    </div>
+    <div class="key-findings">
+      <h3>Key Findings</h3>
+      <ul>
+        {% for finding in key_findings %}
+        <li>{{ finding }}</li>
+        {% endfor %}
+      </ul>
+      {% if top5 %}
+      <h3 style="margin-top:16px">Top Priority CVEs</h3>
+      <table class="vuln-table" style="margin-top:8px">
+        <thead><tr><th>CVE ID</th><th>Score</th><th>Product</th><th>EPSS%</th><th>KEV</th><th>Patch By</th></tr></thead>
+        <tbody>
+        {% for cve in top5 %}
+        <tr class="row-{{ cve.priority_category }}">
+          <td><a href="#{{ cve.cve_id }}" style="color:var(--accent);font-weight:600">{{ cve.cve_id }}</a></td>
+          <td><span class="badge badge-{{ cve.priority_category }}">{{ cve.composite_score or 'N/A' }}</span></td>
+          <td style="font-size:12px">{{ cve.product | truncate(25) }}</td>
+          <td>{{ '%.1f%%' % (cve.epss * 100) if cve.epss else '—' }}</td>
+          <td>{% if cve.in_kev %}<span class="badge badge-kev">KEV</span>{% else %}—{% endif %}</td>
+          <td style="font-size:12px;white-space:nowrap">{{ cve.patch_timeline }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ FULL TABLE -->
+<h2>All Vulnerabilities</h2>
+<div class="card" style="overflow-x:auto">
+  <table class="vuln-table" id="mainTable">
+    <thead>
+      <tr>
+        <th onclick="sortTable(0)">#</th>
+        <th onclick="sortTable(1)">CVE ID</th>
+        <th onclick="sortTable(2)">Score ↓</th>
+        <th onclick="sortTable(3)">Priority</th>
+        <th onclick="sortTable(4)">CVSS</th>
+        <th onclick="sortTable(5)">EPSS%</th>
+        <th onclick="sortTable(6)">KEV</th>
+        <th onclick="sortTable(7)">Exploit</th>
+        <th onclick="sortTable(8)">Ransomware</th>
+        <th onclick="sortTable(9)">Patch Timeline</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for cve in all_cves %}
+    <tr class="row-{{ cve.priority_category }}">
+      <td>{{ loop.index }}</td>
+      <td><a href="#{{ cve.cve_id }}" style="color:var(--accent);font-weight:600">{{ cve.cve_id }}</a></td>
+      <td>{{ '%.1f' % cve.composite_score if cve.composite_score else '—' }}</td>
+      <td><span class="badge badge-{{ cve.priority_category }}">{{ cve.priority_category }}</span></td>
+      <td>{{ cve.cvss or '—' }}</td>
+      <td>{{ '%.1f%%' % (cve.epss * 100) if cve.epss else '—' }}</td>
+      <td>{% if cve.in_kev %}<span class="badge badge-kev">KEV</span>{% else %}—{% endif %}</td>
+      <td>
+        {% if cve.has_exploit %}<span class="badge badge-exploit">Exploit</span>
+        {% elif cve.has_poc %}<span class="badge badge-poc">PoC</span>
+        {% else %}—{% endif %}
+      </td>
+      <td>{% if cve.ransomware %}<span class="badge badge-ransomware">Yes</span>{% else %}—{% endif %}</td>
+      <td style="white-space:nowrap;font-size:12px">{{ cve.patch_timeline }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ DETAILED CVE CARDS -->
+<h2>Detailed Vulnerability Analysis</h2>
+{% for cve in all_cves %}
+<div class="card card-shadow cve-card cve-card-{{ cve.priority_category }}" id="{{ cve.cve_id }}">
+  <div class="cve-card-header">
+    <div>
+      <a class="cve-id-link" href="https://nvd.nist.gov/vuln/detail/{{ cve.cve_id }}" target="_blank">{{ cve.cve_id }}</a>
+      {% if cve.nvd_published %}<span style="font-size:11px;color:#7f8c8d;margin-left:8px">Published: {{ cve.nvd_published[:10] }}</span>{% endif %}
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="score-circle score-{{ cve.priority_category }}">{{ cve.composite_score|int if cve.composite_score else '?' }}</div>
+      <span class="badge badge-{{ cve.priority_category }}" style="font-size:13px;padding:5px 14px">{{ cve.priority_category }}</span>
+      <span style="font-size:12px;color:#7f8c8d">{{ cve.patch_timeline }}</span>
+    </div>
+  </div>
+
+  <div class="cve-meta-row">
+    {% if cve.in_kev %}<span class="badge badge-kev">KNOWN EXPLOITED (CISA KEV)</span>{% endif %}
+    {% if cve.ransomware %}<span class="badge badge-ransomware">RANSOMWARE USE: KNOWN</span>{% endif %}
+    {% if cve.has_exploit %}<span class="badge badge-exploit">PUBLIC EXPLOIT AVAILABLE</span>
+    {% elif cve.has_poc %}<span class="badge badge-poc">PoC AVAILABLE</span>{% endif %}
+  </div>
+
+  <div class="ciso-summary">{{ cve.ciso_summary }}</div>
+
+  <div class="detail-grid">
+    <div class="detail-item">
+      <div class="detail-label">CVSS Score</div>
+      <div class="detail-value">{{ cve.cvss or '—' }} <span style="font-weight:400;font-size:11px;color:#7f8c8d">{{ cve.cvss_severity or '' }}</span></div>
+      {% if cve.cvss_vector %}<div style="font-size:10px;color:#7f8c8d;font-family:monospace;margin-top:3px;word-break:break-all">{{ cve.cvss_vector }}</div>{% endif %}
+    </div>
+    <div class="detail-item">
+      <div class="detail-label">EPSS Score</div>
+      <div class="detail-value">{{ '%.3f' % cve.epss if cve.epss else '—' }} <span style="font-weight:400;font-size:11px;color:#7f8c8d">{{ ('(top %.1f%% of all CVEs)' % ((1 - cve.epss_pct) * 100)) if cve.epss_pct else '' }}</span></div>
+      {% if cve.epss %}<div style="font-size:11px;color:#7f8c8d;margin-top:3px">{{ '%.1f%% exploitation probability in next 30 days' % (cve.epss * 100) }}</div>{% endif %}
+    </div>
+    <div class="detail-item">
+      <div class="detail-label">Attack Surface</div>
+      <div class="detail-value" style="font-size:12px">{{ cve.attack_surface }}</div>
+    </div>
+    <div class="detail-item">
+      <div class="detail-label">CWE Classification</div>
+      <div class="detail-value">
+        {% for cwe in cve.cwe_ids %}<span class="cwe-tag">{{ cwe }}</span>{% else %}<span style="color:#7f8c8d">—</span>{% endfor %}
+      </div>
+    </div>
+    {% if cve.techniques %}
+    <div class="detail-item">
+      <div class="detail-label">MITRE ATT&CK Techniques</div>
+      <div class="detail-value">
+        {% for t, name in zip(cve.techniques, cve.technique_names) %}<span class="technique-tag" title="{{ name }}">{{ t }}</span>{% endfor %}
+        {% if cve.tactics %}<div style="font-size:11px;color:#7f8c8d;margin-top:4px">Tactics: {{ cve.tactics | join(', ') }}</div>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% if cve.affected_systems %}
+    <div class="detail-item">
+      <div class="detail-label">Affected Products</div>
+      <div class="detail-value" style="font-size:12px">{{ cve.affected_systems[:3] | join(', ') }}{% if cve.affected_systems|length > 3 %} +{{ cve.affected_systems|length - 3 }} more{% endif %}</div>
+    </div>
+    {% endif %}
+    {% if cve.kev_date_added %}
+    <div class="detail-item">
+      <div class="detail-label">KEV Date Added</div>
+      <div class="detail-value">{{ cve.kev_date_added }}</div>
+      {% if cve.kev_due_date %}<div style="font-size:11px;color:#c0392b;margin-top:3px">Due: {{ cve.kev_due_date }}</div>{% endif %}
+    </div>
+    {% endif %}
+    {% if cve.exploit_count > 0 %}
+    <div class="detail-item">
+      <div class="detail-label">Exploit Availability</div>
+      <div class="detail-value">{{ cve.exploit_count }} exploit(s) found</div>
+      <div class="refs-list" style="margin-top:4px">
+        {% for link in cve.exploit_links[:3] %}<a href="{{ link }}" target="_blank">{{ link }}</a>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Score Breakdown -->
+  <details style="margin-top:14px">
+    <summary style="cursor:pointer;font-size:12px;font-weight:600;color:#7f8c8d;padding:4px 0">Score Breakdown</summary>
+    <table class="score-breakdown" style="margin-top:8px">
+      <thead><tr><th>Component</th><th>Raw Value</th><th>Points</th></tr></thead>
+      <tbody>
+        <tr><td>CVSS (×30%)</td><td>{{ cve.cvss or '—' }}</td><td>{{ '%.1f' % ((cve.cvss or 0) / 10 * 30) }}</td></tr>
+        <tr><td>EPSS (×35%)</td><td>{{ '%.4f' % cve.epss if cve.epss else '—' }}</td><td>{{ '%.1f' % ((cve.epss or 0) * 35) }}</td></tr>
+        <tr><td>KEV Bonus</td><td>{{ 'Yes' if cve.in_kev else 'No' }}</td><td>{{ '+20' if cve.in_kev else '0' }}</td></tr>
+        <tr><td>Exploit Bonus</td><td>{{ 'Full exploit' if cve.has_exploit else ('PoC' if cve.has_poc else 'None') }}</td><td>{{ '+15' if cve.has_exploit else ('+8' if cve.has_poc else '0') }}</td></tr>
+        <tr><td>Ransomware Bonus</td><td>{{ 'Known' if cve.ransomware else 'No' }}</td><td>{{ '+10' if cve.ransomware else '0' }}</td></tr>
+        <tr class="total-row"><td colspan="2">TOTAL (capped at 100)</td><td>{{ cve.composite_score or 'N/A' }}</td></tr>
+      </tbody>
+    </table>
+  </details>
+
+  <!-- Immediate Actions -->
+  {% if cve.immediate_actions %}
+  <div style="margin-top:14px">
+    <h3>Immediate Actions</h3>
+    <ul class="actions-list">
+      {% for action in cve.immediate_actions %}<li>{{ action }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- Workarounds -->
+  {% if cve.workarounds %}
+  <div style="margin-top:10px">
+    <h3>Workarounds / Mitigations</h3>
+    <ul class="actions-list">
+      {% for w in cve.workarounds %}<li>{{ w }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- References -->
+  {% if cve.references %}
+  <div style="margin-top:10px">
+    <h3>References</h3>
+    <div class="refs-list">
+      {% for ref in cve.references[:8] %}<a href="{{ ref }}" target="_blank">{{ ref }}</a>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+
+<!-- ============================================================ METHODOLOGY -->
+<h2>Methodology</h2>
+<div class="card">
+  <h3>Scoring Formula</h3>
+  <div class="formula-box">Score = (CVSS/10 × 30) + (EPSS × 35) + KEV(+20) + Exploit(+15/+8) + Ransomware(+10)
+Capped at 100. Priority: Critical≥80 | High≥60 | Medium≥40 | Low&lt;40</div>
+  <h3 style="margin-top:16px">Data Sources</h3>
+  <table class="method-table">
+    <thead><tr><th>Source</th><th>Data Provided</th><th>Fetched At</th></tr></thead>
+    <tbody>
+      {% for source in data_sources %}
+      <tr><td>{{ source.name }}</td><td>{{ source.description }}</td><td>{{ source.fetched_at }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ AUDIT TRAIL -->
+<h2>Audit Trail</h2>
+<div class="card">
+  <details>
+    <summary style="cursor:pointer;padding:4px 0;font-weight:600">Show decision log ({{ audit_entries|length }} entries)</summary>
+    <div style="margin-top:12px;max-height:400px;overflow-y:auto">
+      {% for entry in audit_entries[:50] %}
+      <div class="audit-entry">{{ entry }}</div>
+      {% endfor %}
+      {% if audit_entries|length > 50 %}
+      <div style="text-align:center;padding:8px;font-size:12px;color:#7f8c8d">Showing first 50 of {{ audit_entries|length }} entries. See audit_log.jsonl for full log.</div>
+      {% endif %}
+    </div>
+  </details>
+</div>
+
+</div><!-- /page-wrap -->
+
+<script>
+function sortTable(col) {
+  const table = document.getElementById('mainTable');
+  const rows = Array.from(table.rows).slice(1);
+  const dir = table.dataset.sortDir === 'asc' ? -1 : 1;
+  table.dataset.sortDir = dir === 1 ? 'asc' : 'desc';
+  rows.sort((a, b) => {
+    const av = a.cells[col].textContent.trim();
+    const bv = b.cells[col].textContent.trim();
+    const an = parseFloat(av.replace('%','').replace('—',''));
+    const bn = parseFloat(bv.replace('%','').replace('—',''));
+    if (!isNaN(an) && !isNaN(bn)) return (an - bn) * dir;
+    return av.localeCompare(bv) * dir;
+  });
+  rows.forEach(r => table.tBodies[0].appendChild(r));
+}
+</script>
+</body>
+</html>

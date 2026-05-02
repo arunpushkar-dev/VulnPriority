@@ -1,0 +1,17 @@
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+requests==2.31.0
+requests-ratelimiter==0.4.2
+beautifulsoup4==4.12.3
+lxml==5.1.0
+jinja2==3.1.4
+google-api-python-client==2.116.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.0
+attackcti==0.4.0
+python-dotenv==1.0.0
+typing-extensions==4.9.0
+pandas==2.2.0
+pytest==8.0.0
+responses==0.25.0
